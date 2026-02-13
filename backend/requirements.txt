@@ -1,0 +1,20 @@
+# Core Framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# LLM Integration
+langchain==0.3.14
+langchain-ollama==0.3.0
+langgraph==0.2.62
+
+# HTTP Client (for Ollama and GitHub API calls)
+httpx==0.28.1
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.25.0
+
+# Utilities
+python-dotenv==1.0.1
