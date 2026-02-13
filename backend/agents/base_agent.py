@@ -141,14 +141,23 @@ class BaseAgent(ABC):
                     }
                     severity = severity_map.get(severity_str, Severity.MEDIUM)
 
+                # Normalize fields that LLMs sometimes return as lists
+                suggestion_raw = item.get("suggestion") or item.get("fix")
+                if isinstance(suggestion_raw, list):
+                    suggestion_raw = "; ".join(str(s) for s in suggestion_raw)
+
+                description_raw = item.get("description", "No description provided")
+                if isinstance(description_raw, list):
+                    description_raw = " ".join(str(s) for s in description_raw)
+
                 finding = Finding(
                     agent=self.agent_type,
                     severity=severity,
                     title=item.get("title", "Untitled Finding"),
-                    description=item.get("description", "No description provided"),
+                    description=description_raw,
                     file_path=item.get("file_path") or item.get("file"),
                     line_number=item.get("line_number") or item.get("line"),
-                    suggestion=item.get("suggestion") or item.get("fix"),
+                    suggestion=suggestion_raw,
                     confidence=float(item.get("confidence", 0.8)),
                 )
                 findings.append(finding)
