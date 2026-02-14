@@ -29,10 +29,13 @@ TO RUN:
     Then visit: http://localhost:8000/docs (Swagger UI)
 """
 
-from fastapi import FastAPI
+import uuid
+
+from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 from backend.api.routes import router
+from backend.api.websocket import manager, handle_analysis
 from backend.config import settings
 
 
@@ -78,3 +81,32 @@ async def root():
         "docs": "/docs",
         "status": "running",
     }
+
+
+@app.websocket("/ws/analyze")
+async def websocket_analyze(websocket: WebSocket):
+    """
+    WebSocket endpoint for real-time analysis streaming.
+
+    Flow:
+        1. Client connects -> gets a unique session_id
+        2. Client sends {"diff_text": "..."} or {"pr_url": "..."}
+        3. Server streams events as each agent starts/completes
+        4. Final event contains the full AnalysisResult
+        5. Connection closes
+
+    Events sent to client:
+        - fetch_started / fetch_completed  (if PR URL)
+        - analysis_started
+        - agent_started (x5)
+        - agent_completed (x5, as each finishes)
+        - analysis_completed (final result)
+        - error (if something goes wrong)
+    """
+    session_id = str(uuid.uuid4())[:8]
+    await manager.connect(websocket, session_id)
+
+    try:
+        await handle_analysis(websocket, session_id)
+    finally:
+        manager.disconnect(session_id)
